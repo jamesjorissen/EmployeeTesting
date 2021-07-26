@@ -6,72 +6,146 @@ const path = require("path");
 const fs = require("fs");
 
 const OUTPUT_DIR = path.resolve(__dirname, "output");
-const outputCourse = path.join(OUTPUT_DIR, "team.html");
+const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
-function applicationList() {
-    function userQuestions() {
-        return inquirer.prompt([
-            {
-                type: "list",
-                name: "employeeTitle",
-                message: "Employee Title: ",
-                choices: ["Engineer", "Intern", "Manager"]
-            },
-            {
-                type: 'input',
-                name: 'name',
-                message: 'Please tell me your name:'
-            },
-            {
-                type: 'input',
-                name: 'id',
-                message: 'Please tell me your id number:'
-            },
-            {
-                type: 'input',
-                name: 'email',
-                message: 'Please tell me your email address:'
-            },
-            {
-                type: "input",
-                name: "github",
-                message: "Please tell me your Github username: ",
-                when: function (answers) {
-                    const value = answers.employeeTitle == "Engineer" ? true : false;
-                    return value;
-                }
-            },
-            {
-                type: "input",
-                name: "officeNumber",
-                message: "Please tell me your office number: ",
-                when: function (answers) {
-                    const value = answers.employeeTitle == "Manager" ? true : false;
-                    return value;
-                }
-            },
-            {
-                type: "input",
-                name: "school",
-                message: "Please tell me which school you attended: ",
-                when: function (answers) {
-                    const value = answers.employeeTitle == "Intern" ? true : false;
-                    return value;
-                }
-            }
-        ]);
-    }
+var team = [];
 
-    function buildTeam() {
-        if (!fs.existsSync(OUTPUT_DIR)) {
-            fs.mkdirSync(OUTPUT_DIR)
+async function mng() {
+    let answers = await inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "What is your name?",
+        },
+        {
+            type: "number",
+            name: "id",
+            message: "What is your ID?",
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "What is your email address?",
+        },
+        {
+            type: "input",
+            name: "officeNumber",
+            message: "What is your phone number?",
         }
-        fs.writeFileSync(outputCourse, render(answers), "utf-8");
-    }
+    ]);
+    var employee = new Manager(answers.name, answers.id, answers.email, answers.officeNumber)
+    team.push(employee);
+};
 
-    userQuestions();
+async function eng() {
+    var answers = await inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "What is your name?"
+        },
+        {
+            type: "number",
+            name: "id",
+            message: "What is your ID?",
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "What is your email address?",
+        },
+        {
+            type: "input",
+            name: "github",
+            message: "What is your Github username?",
+        }
+    ]);
+    var employee = new Engineer(answers.name, answers.id, answers.email, answers.github)
+    team.push(employee);
+};
+
+async function int() {
+    let answers = await inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "What is your name?",
+        },
+        {
+            type: "number",
+            name: "id",
+            message: "What is your ID?",
+            default: 3
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "What is your email?",
+        },
+        {
+            type: "input",
+            name: "school",
+            message: "Where did you go to school?",
+        }
+    ]);
+    var employee = new Intern(answers.name, answers.id, answers.email, answers.school)
+    team.push(employee);
+};
+
+const gainMembership = async () => {
+    let answers = await inquirer.prompt(
+        {
+            type: "list",
+            name: "role",
+            message: "What type of employee are you adding?",
+            choices: ["Engineer", "Intern", "Manager"]
+        }
+    )
+    if (answers.role === "Engineer") {
+        await eng();
+        addTeamMember();
+    }
+    else if (answers.role === "Intern") {
+        await int();
+        addTeamMember();
+    }
+    else if (answers.role === "Manager") {
+        await mng();
+        addTeamMember();
+    }
 }
 
-applicationList();
+//choice to add more profiles or not, if no the page will render as complete!
+const addTeamMember = async () => {
+    let answers = await inquirer.prompt(
+        {
+            type: "list",
+            name: "role",
+            message: "Would you like to add another",
+            choices: ["Yes", "No"]
+        }
+    )
+    if (answers.role === "Yes") {
+        gainMembership();
+    }
+    else if (answers.role === "No") {
+        complete();
+    }
+    else {
+        console.log("complete")
+    }
+}
+
+const assemble = async () => {
+    await mng();
+    gainMembership();
+}
+
+const complete = async () => {
+
+    fs.writeFileSync(outputPath, render(team), "utf-8")
+}
+
+assemble();
